@@ -16,7 +16,7 @@ declare module 'react-static' {
 
   export const Head: Helmet;
 
-  export function getRouteProps(comp: any): any;
+  export function getRouteProps(comp: any, customFunc: any): any;
   export function getSiteProps(comp: any): any;
   export async function prefetch(path: any): any;
 
