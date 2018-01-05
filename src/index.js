@@ -268,7 +268,7 @@ export function getRouteProps (Comp, customFunc) {
       }
       render () {
         const { pathname, search } = this.props.location
-        const path = pathJoin(`${pathname}${search}`)
+        const path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
 
         let initialProps
 
