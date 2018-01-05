@@ -231,7 +231,7 @@ export async function prefetch (path) {
   return pathProps[path]
 }
 
-export function getRouteProps (Comp) {
+export function getRouteProps (Comp, customFunc) {
   return withRouter(
     class GetRouteProps extends Component {
       static contextTypes = {
@@ -257,7 +257,7 @@ export function getRouteProps (Comp) {
       }
       loadRouteProps = async () => {
         const { pathname, search } = this.props.location
-        const path = pathJoin(`${pathname}${search}`)
+        const path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
         await prefetch(path)
         if (this.unmounting) {
           return
