@@ -234,146 +234,146 @@ export async function prefetch (path) {
 export function getRouteProps (Comp, customFunc) {
   return withRouter(
     class GetRouteProps extends Component {
-      static contextTypes = {
-        initialProps: PropTypes.object,
-      }
-      state = {
-        loaded: false,
-      }
-      componentWillMount () {
-        if (process.env.REACT_STATIC_ENV === 'development') {
-          this.loadRouteProps()
-        }
-      }
-      componentWillReceiveProps (nextProps) {
-        if (process.env.REACT_STATIC_ENV === 'development') {
-          if (this.props.match.url !== nextProps.match.url) {
-            this.setState({ loaded: false }, this.loadRouteProps)
-          }
-        }
-      }
-      componentWillUnmount () {
-        this.unmounting = true
-      }
-      loadRouteProps = async () => {
-        const { pathname, search } = this.props.location
-        const path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
-        await prefetch(path)
-        if (this.unmounting) {
-          return
-        }
-        this.setState({
-          loaded: true,
-        })
-      }
-      render () {
-        const { pathname, search } = this.props.location
-        const path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
+            static contextTypes = {
+              initialProps: PropTypes.object,
+            }
+            state = {
+              loaded: false,
+            }
+            componentWillMount () {
+              if (process.env.REACT_STATIC_ENV === 'development') {
+                this.loadRouteProps()
+              }
+            }
+            componentWillReceiveProps (nextProps) {
+              if (process.env.REACT_STATIC_ENV === 'development') {
+                if (this.props.match.url !== nextProps.match.url) {
+                  this.setState({ loaded: false }, this.loadRouteProps)
+                }
+              }
+            }
+            componentWillUnmount () {
+              this.unmounting = true
+            }
+            loadRouteProps = async () => {
+              const { pathname, search } = this.props.location
+              const path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
+              await prefetch(path)
+              if (this.unmounting) {
+                return
+              }
+              this.setState({
+                loaded: true,
+              })
+            }
+            render () {
+              const { pathname, search } = this.props.location
+              const path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
 
-        let initialProps
+              let initialProps
 
-        if (typeof window !== 'undefined') {
-          if (window.__routeData && window.__routeData.path === path) {
-            initialProps = window.__routeData.initialProps
-          }
-        }
+              if (typeof window !== 'undefined') {
+                if (window.__routeData && window.__routeData.path === path) {
+                  initialProps = window.__routeData.initialProps
+                }
+              }
 
-        if (!initialProps && this.context.initialProps) {
-          initialProps = this.context.initialProps
-        } else {
-          initialProps = pathProps[path] ? pathProps[path].initialProps : initialProps
-        }
+              if (!initialProps && this.context.initialProps) {
+                initialProps = this.context.initialProps
+              } else {
+                initialProps = pathProps[path] ? pathProps[path].initialProps : initialProps
+              }
 
-        if (!initialProps && this.state.loaded) {
-          console.error(
-            `Warning: getRouteProps could not find any props for route: ${path}. Either you are missing a getProps function for this route in your static.config.js or you are using the getRouteProps HOC when you don't need to.`,
-          )
-        }
+              if (!initialProps && this.state.loaded) {
+                console.error(
+                  `Warning: getRouteProps could not find any props for route: ${path}. Either you are missing a getProps function for this route in your static.config.js or you are using the getRouteProps HOC when you don't need to.`,
+                )
+              }
 
-        if (!initialProps) {
-          if (process.env.REACT_STATIC_ENV === 'development') {
-            return <InitialLoading />
-          }
-          return null
-        }
+              if (!initialProps) {
+                if (process.env.REACT_STATIC_ENV === 'development') {
+                  return <InitialLoading />
+                }
+                return null
+              }
 
-        return <Comp {...this.props} {...initialProps} />
-      }
+              return <Comp {...this.props} {...initialProps} />
+            }
     },
   )
 }
 
 export function getSiteProps (Comp) {
   return class GetSiteProps extends Component {
-    static contextTypes = {
-      siteProps: PropTypes.object,
-    }
-    state = {
-      siteProps: false,
-    }
-    async componentWillMount () {
-      if (process.env.REACT_STATIC_ENV === 'development') {
-        const { data: siteProps } = await (() => {
-          if (sitePropsPromise) {
-            return sitePropsPromise
+        static contextTypes = {
+          siteProps: PropTypes.object,
+        }
+        state = {
+          siteProps: false,
+        }
+        async componentWillMount () {
+          if (process.env.REACT_STATIC_ENV === 'development') {
+            const { data: siteProps } = await (() => {
+              if (sitePropsPromise) {
+                return sitePropsPromise
+              }
+              sitePropsPromise = axios.get('/__react-static__/siteProps')
+              return sitePropsPromise
+            })()
+            if (this.unmounting) {
+              return
+            }
+            this.setState({
+              siteProps,
+            })
           }
-          sitePropsPromise = axios.get('/__react-static__/siteProps')
-          return sitePropsPromise
-        })()
-        if (this.unmounting) {
-          return
         }
-        this.setState({
-          siteProps,
-        })
-      }
-    }
-    componentWillUnmount () {
-      this.unmounting = true
-    }
-    render () {
-      let siteProps
-      if (typeof window !== 'undefined') {
-        if (window.__routeData) {
-          siteProps = window.__routeData.siteProps
+        componentWillUnmount () {
+          this.unmounting = true
         }
-      }
+        render () {
+          let siteProps
+          if (typeof window !== 'undefined') {
+            if (window.__routeData) {
+              siteProps = window.__routeData.siteProps
+            }
+          }
 
-      if (!siteProps && this.context.siteProps) {
-        siteProps = this.context.siteProps
-      }
+          if (!siteProps && this.context.siteProps) {
+            siteProps = this.context.siteProps
+          }
 
-      if (!siteProps && this.state.siteProps) {
-        siteProps = this.state.siteProps
-      }
+          if (!siteProps && this.state.siteProps) {
+            siteProps = this.state.siteProps
+          }
 
-      if (!siteProps) {
-        if (process.env.REACT_STATIC_ENV === 'development') {
-          return <InitialLoading />
+          if (!siteProps) {
+            if (process.env.REACT_STATIC_ENV === 'development') {
+              return <InitialLoading />
+            }
+            return null
+          }
+
+          return <Comp {...this.props} {...siteProps} />
         }
-        return null
-      }
-
-      return <Comp {...this.props} {...siteProps} />
-    }
   }
 }
 
 export class Prefetch extends Component {
-  static defaultProps = {
-    children: null,
-    path: null,
-    onLoad: () => {},
-  }
-  async componentDidMount () {
-    const { path, onLoad } = this.props
+    static defaultProps = {
+      children: null,
+      path: null,
+      onLoad: () => {},
+    }
+    async componentDidMount () {
+      const { path, onLoad } = this.props
 
-    const data = await prefetch(path)
-    onLoad(data, path)
-  }
-  render () {
-    return this.props.children
-  }
+      const data = await prefetch(path)
+      onLoad(data, path)
+    }
+    render () {
+      return this.props.children
+    }
 }
 
 const ioIsSupported = typeof window !== 'undefined' && 'IntersectionObserver' in window
@@ -393,40 +393,40 @@ const handleIntersection = (element, callback) => {
 }
 
 export class PrefetchWhenSeen extends Component {
-  static defaultProps = {
-    children: null,
-    path: null,
-    className: null,
-    onLoad: () => {},
-  }
-
-  componentDidMount () {
-    if (!ioIsSupported) {
-      this.runPrefetch()
+    static defaultProps = {
+      children: null,
+      path: null,
+      className: null,
+      onLoad: () => {},
     }
-  }
 
-  runPrefetch = () => {
-    const { path, onLoad } = this.props
-    prefetch(path).then(data => {
-      onLoad(data, path)
-    })
-  }
-
-  handleRef = ref => {
-    if (ioIsSupported && ref) {
-      handleIntersection(ref, this.runPrefetch)
+    componentDidMount () {
+      if (!ioIsSupported) {
+        this.runPrefetch()
+      }
     }
-  }
 
-  render () {
-    const { children, className } = this.props
-    return (
-      <div className={className} ref={this.handleRef}>
-        {children}
-      </div>
-    )
-  }
+    runPrefetch = () => {
+      const { path, onLoad } = this.props
+      prefetch(path).then(data => {
+        onLoad(data, path)
+      })
+    }
+
+    handleRef = ref => {
+      if (ioIsSupported && ref) {
+        handleIntersection(ref, this.runPrefetch)
+      }
+    }
+
+    render () {
+      const { children, className } = this.props
+      return (
+        <div className={className} ref={this.handleRef}>
+          {children}
+        </div>
+      )
+    }
 }
 
 let loading = false
@@ -437,109 +437,107 @@ const setLoading = d => {
 }
 
 export class Router extends Component {
-  static defaultProps = {
-    type: 'browser',
-  }
-  static subscribe = cb => {
-    const ccb = () => cb(loading)
-    subscribers.push(ccb)
-    return () => {
-      subscribers = subscribers.filter(d => d !== ccb)
+    static defaultProps = {
+      type: 'browser',
     }
-  }
-  static contextTypes = {
-    staticURL: PropTypes.string,
-  }
-  state = {
-    error: null,
-    errorInfo: null,
-  }
-  componentWillMount () {
-    getRouteInfo()
-  }
-  componentDidMount () {
-    if (typeof window !== 'undefined') {
-      const { href, origin } = window.location
-      const path = pathJoin(href.replace(origin, ''))
-      if (window.__routeData && window.__routeData.path === path) {
-        const initialProps = window.__routeData.initialProps
-        Object.keys(initialProps).forEach(key => {
-          propsByHash[window.__routeData.propsMap[key]] = initialProps[key]
-        })
+    static subscribe = cb => {
+      const ccb = () => cb(loading)
+      subscribers.push(ccb)
+      return () => {
+        subscribers = subscribers.filter(d => d !== ccb)
       }
     }
-  }
-  componentDidCatch (error, errorInfo) {
-    // Catch errors in any child components and re-renders with an error message
-    this.setState({
-      error,
-      errorInfo,
-    })
-  }
-  render () {
-    const { history, type, ...rest } = this.props
-    const { staticURL } = this.context
-    const context = staticURL ? {} : undefined
-
-    let ResolvedRouter
-    let resolvedHistory
-
-    if (this.state.error) {
-      // Fallback UI if an error occurs
-      return (
-        <div
-          style={{
-            margin: '1rem',
-            padding: '1rem',
-            background: 'rgba(0,0,0,0.05)',
-          }}
-        >
-          <h2>Oh-no! Something's gone wrong!</h2>
-          <pre style={{ whiteSpace: 'normal', color: 'red' }}>
-            <code>{this.state.error && this.state.error.toString()}</code>
-          </pre>
-          <h3>This error occurred here:</h3>
-          <pre style={{ color: 'red', overflow: 'auto' }}>
-            <code>{this.state.errorInfo.componentStack}</code>
-          </pre>
-          <p>For more information, please see the console.</p>
-        </div>
-      )
+    static contextTypes = {
+      staticURL: PropTypes.string,
     }
-
-    // If statically rendering, use the static router
-    if (staticURL) {
-      ResolvedRouter = StaticRouter
-      resolvedHistory = undefined
-    } else {
-      ResolvedRouter = ReactRouter
-      resolvedHistory = history || global.__reactStaticRouterHistory
-      if (!resolvedHistory) {
-        if (type === 'memory') {
-          resolvedHistory = createMemoryHistory()
-        } else if (type === 'hash') {
-          resolvedHistory = createHashHistory()
-        } else {
-          resolvedHistory = createBrowserHistory()
+    state = {
+      error: null,
+      errorInfo: null,
+    }
+    componentWillMount () {
+      getRouteInfo()
+    }
+    componentDidMount () {
+      if (typeof window !== 'undefined') {
+        const { href, origin } = window.location
+        const path = pathJoin(href.replace(origin, ''))
+        if (window.__routeData && window.__routeData.path === path) {
+          const initialProps = window.__routeData.initialProps
+          Object.keys(initialProps).forEach(key => {
+            propsByHash[window.__routeData.propsMap[key]] = initialProps[key]
+          })
         }
       }
-      global.__reactStaticRouterHistory = resolvedHistory
-      ;['push', 'replace'].forEach(method => {
-        const originalMethod = resolvedHistory[method]
-        resolvedHistory[method] = async (...args) => {
-          const path = typeof args[0] === 'string' ? args[0] : args[0].path + args[0].search
-          if ((await shouldPrefetch(path)) && !isPrefetched(path)) {
-            setLoading(true)
-            await prefetch(path)
-            setLoading(false)
-          }
-          originalMethod.apply(resolvedHistory, args)
-        }
+    }
+    componentDidCatch (error, errorInfo) {
+      // Catch errors in any child components and re-renders with an error message
+      this.setState({
+        error,
+        errorInfo,
       })
     }
+    render () {
+      const { history, type, ...rest } = this.props
+      const { staticURL } = this.context
+      const context = staticURL ? {} : undefined
 
-    return (
-      <ResolvedRouter history={resolvedHistory} location={staticURL} context={context} {...rest} />
-    )
-  }
+      let ResolvedRouter
+      let resolvedHistory
+
+      if (this.state.error) {
+        // Fallback UI if an error occurs
+        return (
+          <div
+            style={{
+              margin: '1rem',
+              padding: '1rem',
+              background: 'rgba(0,0,0,0.05)',
+            }}
+          >
+            <h2>Oh-no! Something's gone wrong!</h2>
+            <pre style={{ whiteSpace: 'normal', color: 'red' }}>
+              <code>{this.state.error && this.state.error.toString()}</code>
+            </pre>
+            <h3>This error occurred here:</h3>
+            <pre style={{ color: 'red', overflow: 'auto' }}>
+              <code>{this.state.errorInfo.componentStack}</code>
+            </pre>
+            <p>For more information, please see the console.</p>
+          </div>
+        )
+      }
+      // If statically rendering, use the static router
+      if (staticURL) {
+        ResolvedRouter = StaticRouter
+        resolvedHistory = undefined
+      } else {
+        ResolvedRouter = ReactRouter
+        resolvedHistory = history || global.__reactStaticRouterHistory
+        if (!resolvedHistory) {
+          if (type === 'memory') {
+            resolvedHistory = createMemoryHistory()
+          } else if (type === 'hash') {
+            resolvedHistory = createHashHistory()
+          } else {
+            resolvedHistory = createBrowserHistory()
+          }
+        }
+        global.__reactStaticRouterHistory = resolvedHistory
+        ;['push', 'replace'].forEach(method => {
+          const originalMethod = resolvedHistory[method]
+          resolvedHistory[method] = async (...args) => {
+            const path = typeof args[0] === 'string' ? args[0] : args[0].path + args[0].search
+            if ((await shouldPrefetch(path)) && !isPrefetched(path)) {
+              setLoading(true)
+              await prefetch(path)
+              setLoading(false)
+            }
+            originalMethod.apply(resolvedHistory, args)
+          }
+        })
+      }
+      return (
+        <ResolvedRouter history={resolvedHistory} location={staticURL} context={context} {...rest} />
+      )
+    }
 }
