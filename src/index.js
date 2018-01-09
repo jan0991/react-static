@@ -273,10 +273,12 @@ export function getRouteProps (Comp, customFunc) {
               let initialProps
 
               if (typeof window !== 'undefined') {
+                console.log(666, window.__routeData)
                 if (window.__routeData && window.__routeData.path === path) {
                   initialProps = window.__routeData.initialProps
                 }
               }
+
 
               if (!initialProps && this.context.initialProps) {
                 initialProps = this.context.initialProps
@@ -294,6 +296,7 @@ export function getRouteProps (Comp, customFunc) {
                 if (process.env.REACT_STATIC_ENV === 'development') {
                   return <InitialLoading />
                 }
+                this.loadRouteProps()
                 return null
               }
 
