@@ -255,25 +255,43 @@ export function getRouteProps (Comp, customFunc) {
             componentWillUnmount () {
               this.unmounting = true
             }
-            loadRouteProps = async () => {
+            loadRouteProps = async retry => {
+              let path
+              let triedOnce
               const { pathname, search } = this.props.location
-              const path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
+              if (typeof retry === 'boolean') {
+                path = '/midpost'
+              } else {
+                path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
+              }
+
+              if (Number.isInteger(retry)) {
+                retry = false
+               triedOnce = true
+              }
+
               await prefetch(path)
               if (this.unmounting) {
                 return
               }
               this.setState({
                 loaded: true,
+                retry,
+                triedOnce,
               })
             }
             render () {
+              let path
               const { pathname, search } = this.props.location
-              const path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
+              if (this.state.retry) {
+                path = '/midpost'
+              } else {
+                path = customFunc ? customFunc(this.props.location) : pathJoin(`${pathname}${search}`)
+              }
 
               let initialProps
 
               if (typeof window !== 'undefined') {
-                console.log(666, window.__routeData)
                 if (window.__routeData && window.__routeData.path === path) {
                   initialProps = window.__routeData.initialProps
                 }
@@ -287,20 +305,26 @@ export function getRouteProps (Comp, customFunc) {
               }
 
               if (!initialProps && this.state.loaded) {
-                console.error(
-                  `Warning: getRouteProps could not find any props for route: ${path}. Either you are missing a getProps function for this route in your static.config.js or you are using the getRouteProps HOC when you don't need to.`,
-                )
+                this.loadRouteProps(true)
+                // console.error(
+                //   `Warning: getRouteProps could not find any props for route: ${path}. Either you are missing a getProps function for this route in your static.config.js or you are using the getRouteProps HOC when you don't need to.`,
+                // )
               }
 
               if (!initialProps) {
                 if (process.env.REACT_STATIC_ENV === 'development') {
                   return <InitialLoading />
                 }
-                this.loadRouteProps()
+                if (!this.state.triedOnce) {
+                  this.loadRouteProps(1)
+                } else {
+                    this.loadRouteProps(true)
+                }
+
                 return null
               }
 
-              return <Comp {...this.props} {...initialProps} />
+              return <Comp {...this.props} {...initialProps} original={!this.state.retry} />
             }
     },
   )
